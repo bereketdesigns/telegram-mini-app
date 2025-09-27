@@ -1,63 +1,66 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const TELEGRAM_CONFIG = {
-  apiUrl: 'https://your-backend-api-url.com',  // Replace this with your backend URL when ready
-};
-
-const TelegramAuth = () => {
+const App: React.FC = () => {
   const [user, setUser] = useState<any>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string>('');
 
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        const app = window.Telegram.WebApp;
-        app.ready();
+        // Ensure Telegram WebApp is available
+        if (window.Telegram && window.Telegram.WebApp) {
+          const app = window.Telegram.WebApp;
 
-        if (app.initDataUnsafe.user) {
-          setUser(app.initDataUnsafe.user);
+          // Wait for the WebApp to be ready
+          app.ready();
 
-          const initData = app.initData;
-          if (!initData) {
-            throw new Error('No init data available');
+          // Get user data and init data
+          if (app.initDataUnsafe.user) {
+            setUser(app.initDataUnsafe.user);
+
+            const initData = app.initData;
+            if (!initData) {
+              throw new Error('No init data available');
+            }
+
+            // Send the raw init data string to the backend or use directly
+            const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/auth/verify`, {
+              params: { init_data: initData },
+              headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' }
+            });
+
+            if (response.status === 200) {
+              console.log('User verified successfully');
+            } else {
+              throw new Error('Failed to verify user');
+            }
           }
-
-          const response = await axios.get(`${TELEGRAM_CONFIG.apiUrl}/api/auth/verify`, {
-            params: { init_data: initData },
-            headers: { 'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded' },
-          });
-
-          if (response.status === 200) {
-            console.log('User verified and saved successfully');
-          } else {
-            throw new Error('Failed to verify user');
-          }
+        } else {
+          throw new Error('Telegram WebApp not found');
         }
-
-        app.ready();
-      } catch (err: unknown) {
-        const errorMessage = (err instanceof Error) ? err.message : 'An unknown error occurred';
-        setError(errorMessage);
+      } catch (err: any) {
+        setError(err.message || 'An error occurred');
       }
     };
 
     initializeApp();
   }, []);
 
-  if (error) {
-    return <div>Error: {error}</div>;
-  }
-
-  if (user) {
-    return (
-      <div>
-        <h1>Welcome, {user.first_name}</h1>
-      </div>
-    );
-  }
-
-  return <div>Loading...</div>;
+  return (
+    <div>
+      <h1>Welcome to My Telegram WebApp</h1>
+      {error && <p>{error}</p>}
+      {user && (
+        <div>
+          <p>User Info:</p>
+          <p>First Name: {user.first_name}</p>
+          <p>Username: {user.username}</p>
+          <p>Last Name: {user.last_name}</p>
+        </div>
+      )}
+    </div>
+  );
 };
 
-export default TelegramAuth;
+export default App;
