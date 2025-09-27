@@ -2,7 +2,7 @@
   "name": "my-telegram-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://bereketdesigns.github.io/telegram-mini-app",  
+  "homepage": "",  
   "dependencies": {
     "axios": "^0.26.1",
     "react": "^18.2.0",
